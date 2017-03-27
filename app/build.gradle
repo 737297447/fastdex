@@ -31,7 +31,7 @@ android {
         applicationId "com.dx168.fastdex.sample"
         versionCode 1
         versionName "1.0"
-        multiDexEnabled true
+        multiDexEnabled false
     }
 
     signingConfigs {

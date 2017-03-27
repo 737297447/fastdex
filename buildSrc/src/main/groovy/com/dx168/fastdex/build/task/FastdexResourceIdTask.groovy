@@ -40,7 +40,7 @@ public class FastdexResourceIdTask extends DefaultTask {
         String resourceMappingFile = new File(buildDir,Constant.R_TXT)
 
         // Parse the public.xml and ids.xml
-        if (!FileUtils.isLegalFile(resourceMappingFile)) {
+        if (!FileUtils.isLegalFile(new File(resourceMappingFile))) {
             project.logger.error("==fastdex apply resource mapping file ${resourceMappingFile} is illegal, just ignore")
             return
         }

@@ -1,11 +1,15 @@
 package com.dx168.fastdex.build.transform
 
+import com.android.build.api.transform.DirectoryInput
+import com.android.build.api.transform.TransformInput
 import com.android.build.api.transform.Transform
 import com.android.build.api.transform.TransformException
 import com.android.build.api.transform.TransformInvocation
-import com.dx168.fastdex.build.util.*
-import org.gradle.api.GradleException
+import com.dx168.fastdex.build.util.FastdexUtils
+import com.dx168.fastdex.build.util.JarOperation
 import org.gradle.api.Project
+import com.android.build.api.transform.Format
+import com.dx168.fastdex.build.util.FileUtils
 
 /**
  * 拦截transformClassesWithJarMergingFor${variantName}任务,
@@ -29,36 +33,49 @@ class FastdexJarMergingTransform extends TransformProxy {
     void transform(TransformInvocation transformInvocation) throws TransformException, IOException, InterruptedException {
         if (FastdexUtils.hasDexCache(project,variantName)) {
             project.logger.error("==fastdex generate patch jar start")
-
-
-
-//            //根据变化的java文件列表生成解压的pattern
-//            Set<String> changedClassPatterns = FastdexUtils.getChangedClassPatterns(project,variantName,manifestPath)
-//
-//            //add all changed file to jar
-//            File mergedJar = new File(FastdexUtils.getBuildDir(project,variantName),"latest-merged.jar")
-//            FileUtils.deleteFile(mergedJar)
-//
-//            //合并所有的输入jar
-//            mergedJar = GradleUtils.executeMerge(project,transformInvocation,mergedJar)
-//
-//            if (changedClassPatterns.isEmpty()) {
-//                project.logger.error("==fastdex changedClassPatterns.size == 0")
-//                return mergedJar
-//            }
-//
-//            if (project.fastdex.debug) {
-//                project.logger.error("==fastdex debug mergeJar: ${mergedJar}")
-//                project.logger.error("==fastdex debug changedClassPatterns: ${changedClassPatterns}")
-//            }
-//
-//            File patchJar = new File(FastdexUtils.getBuildDir(project,variantName),"patch-combined.jar")
-//            //生成补丁jar
-//            JarOperation.transformPatchJar(project,mergedJar,patchJar,changedClassPatterns)
+            //根据变化的java文件列表生成解压的pattern
+            Set<String> changedClassPatterns = getChangedClassPatterns()
+            if (changedClassPatterns.isEmpty()) {
+                base.transform(transformInvocation)
+                return
+            }
+            File outputJar = getOutputJarFile(transformInvocation)
+            Set<File> dirClasspaths = getDirClasspaths(transformInvocation)
+            //生成补丁jar
+            JarOperation.generatePatchJar(project,dirClasspaths,outputJar,changedClassPatterns)
         }
         else {
             //TODO inject dir input
             base.transform(transformInvocation)
         }
+    }
+
+    public Set<File> getDirClasspaths(TransformInvocation invocation) {
+        Set<File> dirClasspaths = new HashSet<>();
+        for (TransformInput input : invocation.getInputs()) {
+            Collection<DirectoryInput> directoryInputs = input.getDirectoryInputs()
+            if (directoryInputs != null) {
+                for (DirectoryInput directoryInput : directoryInputs) {
+                    dirClasspaths.add(directoryInput.getFile())
+                }
+            }
+        }
+
+        return dirClasspaths
+    }
+
+    public File getOutputJarFile(TransformInvocation invocation) {
+        def outputProvider = invocation.getOutputProvider();
+
+        // all the output will be the same since the transform type is COMBINED.
+        // and format is SINGLE_JAR so output is a jar
+        File jarFile = outputProvider.getContentLocation("combined", base.getOutputTypes(), base.getScopes(), Format.JAR);
+        FileUtils.ensumeDir(jarFile.getParentFile());
+
+        return jarFile
+    }
+
+    public Set<String> getChangedClassPatterns() {
+        return FastdexUtils.getChangedClassPatterns(project,variantName,manifestPath)
     }
 }

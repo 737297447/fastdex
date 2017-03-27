@@ -68,13 +68,6 @@ public class FileUtils {
         return true;
     }
 
-    public static boolean isLegalFile(String path) {
-        if (path == null) {
-            return false;
-        }
-        return isLegalFile(new File(path));
-    }
-
     public static boolean isLegalFile(File file) {
         if (file == null) {
             return false;

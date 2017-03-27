@@ -173,7 +173,6 @@ public class FastdexCustomJavacTask extends DefaultTask {
             }
         }
 
-        FileUtils.deleteFile(FastdexUtils.getCustomJavacTaskOutputFile(project,variantName))
         if (hasValidCache) {
             project.logger.error("==fastdex discover cached for ${variantName.toLowerCase()}")
         }
@@ -191,7 +190,7 @@ public class FastdexCustomJavacTask extends DefaultTask {
     Set<String> getCachedDependList() {
         Set<String> result = new HashSet<>()
         File cachedDependListFile = FastdexUtils.getCachedDependListFile(project,variantName)
-        if (FileUtils.isLegalFile(cachedDependListFile.getAbsolutePath())) {
+        if (FileUtils.isLegalFile(cachedDependListFile)) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(cachedDependListFile)))
             String line = null
             while ((line = reader.readLine()) != null) {

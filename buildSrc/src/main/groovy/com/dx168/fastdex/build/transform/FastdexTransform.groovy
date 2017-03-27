@@ -7,10 +7,14 @@ import com.dx168.fastdex.build.util.Constant
 import com.dx168.fastdex.build.util.FastdexUtils
 import com.dx168.fastdex.build.util.GradleUtils
 import com.dx168.fastdex.build.util.JarOperation
+import com.google.common.collect.Lists
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import com.android.build.api.transform.Format
 import com.dx168.fastdex.build.util.FileUtils
+import com.android.build.api.transform.JarInput
+import com.android.build.api.transform.TransformInput
+
 
 /**
  * 用于dex生成
@@ -89,7 +93,7 @@ class FastdexTransform extends TransformProxy {
                 File dexOutputDir = getDexOutputDir(transformInvocation)
 
                 if (project.fastdex.debug) {
-                    project.logger.error("==fastdex patch transform dexdir: ${dexOutputDir}")
+                    project.logger.error("==fastdex patch transform dex dir: ${dexOutputDir}")
                 }
                 //复制补丁打包的dex到输出路径
                 hookPatchBuildDex(dexOutputDir,patchDex)
@@ -144,11 +148,20 @@ class FastdexTransform extends TransformProxy {
      * @return
      */
     File generatePatchJar(TransformInvocation transformInvocation) {
-        File customPatchJar = FastdexUtils.getCustomJavacTaskOutputFile(project,variantName)
-        if (FileUtils.isLegalFile(customPatchJar)) {
-            project.logger.error("==fastdex use custom jar")
-            return customPatchJar
+        def config = applicationVariant.getVariantData().getVariantConfiguration()
+        boolean isMultiDexEnabled = config.isMultiDexEnabled()
+        if (isMultiDexEnabled) {
+            //如果开启了multidex,FastdexJarMergingTransform完成了jar merge的操作
+            List<JarInput> jarInputs = Lists.newArrayList();
+            for (TransformInput input : transformInvocation.getInputs()) {
+                jarInputs.addAll(input.getJarInputs());
+            }
+
+            File patchJar = jarInputs.get(0).getFile()
+            project.logger.error("==fastdex multiDex enabled use patch.jar: ${patchJar}")
+            return patchJar
         }
+
         //根据变化的java文件列表生成解压的pattern
         Set<String> changedClassPatterns = FastdexUtils.getChangedClassPatterns(project,variantName,manifestPath)
 
@@ -275,7 +288,7 @@ class FastdexTransform extends TransformProxy {
 
         int point = 2
         File dexFile = new File(dexOutputDir,"classes" + point + ".dex")
-        while (FileUtils.isLegalFile(dexFile.getAbsolutePath())) {
+        while (FileUtils.isLegalFile(dexFile)) {
             new File(dexOutputDir,"classes${point}.dex").renameTo(new File(dexOutputDir,"classes${point + 1}.dex${tmpSuffix}"))
             point++
             dexFile = new File(cacheDexDir,"classes${point}.dex")
@@ -290,7 +303,7 @@ class FastdexTransform extends TransformProxy {
         //classesN.dex.tmp => classesN.dex.tmp
         point = 2
         dexFile = new File(dexOutputDir,"classes${point}.dex${tmpSuffix}")
-        while (FileUtils.isLegalFile(dexFile.getAbsolutePath())) {
+        while (FileUtils.isLegalFile(dexFile)) {
             dexFile.renameTo(new File(dexOutputDir,"classes${point}.dex"))
             point++
             dexFile = new File(dexOutputDir,"classes${point}.dex${tmpSuffix}")
@@ -322,7 +335,7 @@ class FastdexTransform extends TransformProxy {
 
         int point = 2
         File dexFile = new File(cacheDexDir,"classes" + point + ".dex")
-        while (FileUtils.isLegalFile(dexFile.getAbsolutePath())) {
+        while (FileUtils.isLegalFile(dexFile)) {
             FileUtils.copyFileUsingStream(dexFile,new File(dexOutputDir,"classes" + (point + 2) + ".dex"))
             point++
             dexFile = new File(cacheDexDir,"classes" + point + ".dex")

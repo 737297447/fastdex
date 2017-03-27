@@ -108,6 +108,8 @@ public class GradleUtils {
         if (!FileUtils.isLegalFile(outputJar)) {
             throw new GradleException("merge jar fail: \n jarInputs: ${jarInputs}\n dirInputs: ${dirInputs}\n mergedJar: ${outputJar}")
         }
+
+        return outputJar
     }
 
 

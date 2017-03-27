@@ -23,7 +23,7 @@ public class FastdexCreateMaindexlistFileTask extends DefaultTask {
             File parentFile = maindexlistFile.getParentFile()
             FileUtils.ensumeDir(parentFile)
 
-            if (!FileUtils.isLegalFile(maindexlistFile.getAbsolutePath())) {
+            if (!FileUtils.isLegalFile(maindexlistFile)) {
                 maindexlistFile.createNewFile()
             }
         }

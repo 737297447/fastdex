@@ -152,17 +152,6 @@ public class FastdexUtils {
     }
 
     /**
-     * 获取自定义的java compile任务输出的jar文件
-     * @param project
-     * @param variantName
-     * @return
-     */
-    public static File getCustomJavacTaskOutputFile(Project project,String variantName) {
-        File injectedJarFile = new File(getBuildDir(project,variantName),Constant.CUSTOM_JAVAC_JAR_FILENAME)
-        return injectedJarFile
-    }
-
-    /**
      *扫描所有的项目代码(sourceSet、app/build/generated)
      */
     public static Set<String> getNeedInjectClassPatterns(Project project,Object applicationVariant) {
