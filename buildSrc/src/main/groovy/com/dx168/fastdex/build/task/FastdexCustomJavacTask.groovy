@@ -111,22 +111,6 @@ public class FastdexCustomJavacTask extends DefaultTask {
                 return FileVisitResult.CONTINUE
             }
         })
-
-        //FileUtils.deleteDir(patchClassesFileDir)
-
-//        File customJavacTaskOutputFile = FastdexUtils.getCustomJavacTaskOutputFile(project,variantName)
-//        project.ant.zip(baseDir: patchClassesFileDir, destFile: customJavacTaskOutputFile)
-
-//        if (FileUtils.isLegalFile(customJavacTaskOutputFile)) {
-//            project.logger.error("==fastdex compile success: ${customJavacTaskOutputFile}")
-//            compileTask.enabled = false
-//            //jarMergingTask.enabled = false
-//        }
-//        else {
-//            project.logger.error("==fastdex compile fail!")
-//            compileTask.enabled = true
-//            //jarMergingTask.enabled = true
-//        }
     }
 
     /*

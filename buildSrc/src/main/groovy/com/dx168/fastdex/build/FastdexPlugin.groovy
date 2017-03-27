@@ -3,10 +3,12 @@ package com.dx168.fastdex.build
 import com.android.build.api.transform.Transform
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.transforms.DexTransform
+import com.android.build.gradle.internal.transforms.JarMergingTransform
 import com.dx168.fastdex.build.task.FastdexCleanTask
 import com.dx168.fastdex.build.task.FastdexCreateMaindexlistFileTask
 import com.dx168.fastdex.build.task.FastdexManifestTask
 import com.dx168.fastdex.build.task.FastdexResourceIdTask
+import com.dx168.fastdex.build.transform.FastdexJarMergingTransform
 import com.dx168.fastdex.build.util.BuildTimeListener
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -138,13 +140,25 @@ class FastdexPlugin implements Plugin<Project> {
                                         && task.name.toLowerCase().contains(variant.name.toLowerCase())) {
 
                                     Transform transform = ((TransformTask) task).getTransform()
+                                    //如果开启了multiDexEnabled true,存在transformClassesWithJarMergingFor${variantName}任务
+                                    if ((((transform instanceof JarMergingTransform)) && !(transform instanceof FastdexJarMergingTransform))) {
+                                        project.logger.error("==fastdex find jarmerging transform. transform class: " + task.transform.getClass() + " . task name: " + task.name)
+
+                                        String manifestPath = variantOutput.processManifest.manifestOutputFile
+
+                                        FastdexJarMergingTransform jarMergingTransform = new FastdexJarMergingTransform(transform,project,variant,manifestPath)
+                                        Field field = getFieldByName(task.getClass(),'transform')
+                                        field.setAccessible(true)
+                                        field.set(task,jarMergingTransform)
+                                    }
+
                                     if ((((transform instanceof DexTransform)) && !(transform instanceof FastdexTransform))) {
                                         project.logger.error("==fastdex find dex transform. transform class: " + task.transform.getClass() + " . task name: " + task.name)
 
                                         String manifestPath = variantOutput.processManifest.manifestOutputFile
 
                                         //代理DexTransform,实现自定义的转换
-                                        FastdexTransform fastdexTransform = new FastdexTransform(task.transform,project,variant,manifestPath)
+                                        FastdexTransform fastdexTransform = new FastdexTransform(transform,project,variant,manifestPath)
                                         Field field = getFieldByName(task.getClass(),'transform')
                                         field.setAccessible(true)
                                         field.set(task,fastdexTransform)
@@ -153,6 +167,7 @@ class FastdexPlugin implements Plugin<Project> {
                             }
                         }
                     });
+
                 }
             }
         }
